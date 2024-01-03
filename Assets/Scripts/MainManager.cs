@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class MainManager : MonoBehaviour
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public Text HighScoreText;
     public GameObject GameOverText;
     
     private bool m_Started = false;
@@ -36,6 +38,7 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+        HighScoreText.text = "Best Score : " + DataPersistence.Instance.highScorePlayerName + $": {DataPersistence.Instance.highScore}";
     }
 
     private void Update()
@@ -67,9 +70,43 @@ public class MainManager : MonoBehaviour
         m_Points += point;
         ScoreText.text = $"Score : {m_Points}";
     }
+    
+    void SetHighScore()
+    {
+        if (m_Points > DataPersistence.Instance.highScore)
+        {
+            DataPersistence.Instance.highScore = m_Points;
+            DataPersistence.Instance.highScorePlayerName = DataPersistence.Instance.playerName;
+            HighScoreText.text = $"Best Score :" + DataPersistence.Instance.playerName + $": {m_Points}";
+            SaveData();
+        }
+        else
+        {
+            HighScoreText.text = "Best Score : " + DataPersistence.Instance.highScorePlayerName + $": {DataPersistence.Instance.highScore}";
+        }
+    }
+
+    [System.Serializable]
+    class Data
+    {
+        public int highScore;
+        public string highScorePlayerName;
+    }
+    
+    public void SaveData()
+    {
+        Data data = new Data();
+        data.highScore = DataPersistence.Instance.highScore;
+        data.highScorePlayerName = DataPersistence.Instance.highScorePlayerName;
+        
+        string json = JsonUtility.ToJson(data);
+        
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
 
     public void GameOver()
     {
+        SetHighScore();
         m_GameOver = true;
         GameOverText.SetActive(true);
     }
